@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
@@ -12,23 +13,66 @@ def load_data(file_name):
     return exoplanet_headers, exoplanet_data
 
 
+def train_test_split(headers, data, column, test_size):
+    split = int(len(data) * test_size)
+
+    column_index = np.where(headers == column)[0][0]
+
+    # for checking the model with something more simplistic
+    orbital_period_days_index = np.where(headers == "Orbital Period Days")[0][0]
+    mass_index = np.where(headers == "Mass")[0][0]
+
+    training_data = data[0: split]
+    test_data = data[split: len(data)]
+
+    x_train = training_data[:, orbital_period_days_index:mass_index]
+    x_test = test_data[:, orbital_period_days_index:mass_index]
+
+    y_train = training_data[:, column_index]
+    y_test = test_data[:, column_index]
+    """
+    
+    x_test = x_train[:, column_index]
+    y_test = y_train[:, column_index]
+    """
+
+    # If random: randomize
+
+    return np.asarray(x_train).astype('float32'),\
+           np.asarray(x_test).astype('float32'),\
+           np.asarray(y_train).astype('float32'),\
+           np.asarray(y_test).astype('float32')
+
+
 headers, data = load_data("all_exoplanets_2021.csv")
 
-# print(headers)
-# print(data)
+x_train, x_test, y_train, y_test = train_test_split(headers, data, 'Stellar Effective Temperature', 0.25)
 
-print(data.shape)
-
+x_train = x_train.reshape(list(x_train.shape) + [1])
+x_train = x_train.reshape(list(x_train.shape) + [1])
+y_train = y_train.reshape(list(y_train.shape) + [1])
+y_train = y_train.reshape(list(y_train.shape) + [1])
+print(x_train.shape)
+print(y_train.shape)
 model = models.Sequential()
 
 # Example of adding layers to a model
 # Make sure the shape of feature data is the same as the expected input, or else it won't work
-model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(64, (3, 3), activation='relu'))
 
+# TODO: Try to get the shape right to fit
+model.add(layers.Conv2D(32, (1, 1), activation='relu', input_shape=x_train.shape[1:]))
+"""
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+"""
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+model.fit(x_train, y_train)
+exit()
 
 # Below is an example setup, we can tweak this
 
