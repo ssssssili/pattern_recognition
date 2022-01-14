@@ -5,43 +5,46 @@ import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
 
 
-def load_data(file_name):
-    input_file = pd.read_csv(file_name)
+def load_data(file_name, header_column):
+    input_file = pd.read_csv(file_name, skiprows=header_column - 1, error_bad_lines=False)
     exoplanet_headers = input_file.columns.values
     exoplanet_data = input_file.values
 
     return exoplanet_headers, exoplanet_data
 
 
-def train_test_split(headers, data, test_size):
+def train_test_split(headers, data, test_size, random):
     split = int(len(data) * test_size)
 
     # for checking the model with something more simplistic
-    orbital_period_days_index = np.where(headers == "Orbital Period Days")[0][0]
-    mass_index = np.where(headers == "Mass")[0][0]
+    # orbital_period_days_index = np.where(headers == "Orbital Period Days")[0][0]
+    # mass_index = np.where(headers == "Mass")[0][0]
+
+    if random:
+        np.random.shuffle(data)
 
     test_data = data[0: split]
     training_data = data[split: len(data)]
 
-    x_train = training_data[:, orbital_period_days_index:mass_index + 1]
-    x_test = test_data[:, orbital_period_days_index:mass_index + 1]
+    # x_train = training_data[:, orbital_period_days_index:mass_index + 1]
+    # x_test = test_data[:, orbital_period_days_index:mass_index + 1]
 
-    # If random: randomize
-
-    x_train = np.asarray(x_train).astype('float32')
-    x_test = np.asarray(x_test).astype('float32')
+    x_train = np.asarray(test_data).astype('float32')
+    x_test = np.asarray(training_data).astype('float32')
 
     return x_train, x_test  # np.nan_to_num(x_train), np.nan_to_num(x_test)
 
 
-headers, data = load_data("all_exoplanets_2021.csv")
+headers, data = load_data("database_all_numerical_filtered.csv", 104)
 
-training, testing, = train_test_split(headers, data, 0.05)
+training, testing, = train_test_split(headers, data, 0.05, False)
 
+print(testing)
 model = models.Sequential()
 
 model.add(layers.Input(shape=training.shape[1:]))
-model.add(layers.Dense(units=3, activation="relu"))
+# If you get an error related to incorrect output size, change units to the same size as the shape of your second fit
+model.add(layers.Dense(units=67, activation="relu"))
 
 model.compile(optimizer='adam',
                loss='categorical_crossentropy',
