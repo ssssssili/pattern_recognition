@@ -6,13 +6,13 @@ from tensorflow.keras import datasets, layers, models
 
 
 def load_data(file_name):
-    input_file = pd.read_csv(file_name)
+    input_file = pd.read_csv(file_name, index_col=False)
     exoplanet_headers = input_file.columns.values
     exoplanet_data = input_file.values
 
     return exoplanet_headers, exoplanet_data
 
-
+load_data('database_all_numerical_filtered.csv')
 def train_test_split(headers, data, test_size):
     split = int(len(data) * test_size)
 
